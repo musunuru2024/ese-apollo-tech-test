@@ -64,4 +64,55 @@ Contributing
 
 License
 - Please add a license if you intend to make this repo public.
+
+Running tests
+--------------
+
+When you add a new file or update code, run the test suite locally before pushing.
+Use a virtual environment or install the test dependencies into your user site-packages:
+
+```bash
+python3 -m pip install --user -r requirements.txt
+```
+
+Run the full test suite:
+
+```bash
+python3 -m pytest
+```
+
+Run quietly (short output):
+
+```bash
+python3 -m pytest -q
+```
+
+Run tests for a single test file (useful after adding a new test file):
+
+```bash
+python3 -m pytest tests/test_newfile.py
+```
+
+Run a single test by node id:
+
+```bash
+python3 -m pytest tests/test_newfile.py::test_specific_behavior
+```
+
+Run tests matching a keyword expression (quick local selection):
+
+```bash
+python3 -m pytest -k "keyword"
+```
+
+Continuous Integration
+----------------------
+
+This repository includes a GitHub Actions workflow (`.github/workflows/ci.yml`) that
+runs the test suite on push and pull requests against Python 3.8–3.11. After pushing
+your changes, the CI will run automatically. Check the Actions tab in GitHub for results.
+
+Tips
+- Prefer working inside a virtualenv: `python3 -m venv .venv && source .venv/bin/activate`
+- Add tests for new behavior and run them locally before pushing.
 # ese-apollo-tech-test
