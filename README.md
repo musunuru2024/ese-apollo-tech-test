@@ -115,4 +115,23 @@ your changes, the CI will run automatically. Check the Actions tab in GitHub for
 Tips
 - Prefer working inside a virtualenv: `python3 -m venv .venv && source .venv/bin/activate`
 - Add tests for new behavior and run them locally before pushing.
+ - Add tests for new behavior and run them locally before pushing.
+
+CI email notifications
+----------------------
+
+This repository can send an email after every CI run (success or failure). To enable it:
+
+1. Go to the repository Settings → Secrets → Actions and add the following secrets:
+	- `SMTP_HOST` — SMTP server address (e.g. smtp.example.com)
+	- `SMTP_PORT` — SMTP server port (e.g. 587)
+	- `SMTP_USERNAME` — SMTP username
+	- `SMTP_PASSWORD` — SMTP password
+	- `NOTIFY_TO` — the recipient email address
+	- `FROM_EMAIL` — the from address to use in the email
+
+2. The workflow will automatically use these secrets and send a short email containing
+	the workflow name, repo, ref, commit and result after each run.
+
+Security note: store credentials as repository secrets; never commit them in plain text.
 # ese-apollo-tech-test
