@@ -1,0 +1,1 @@
+This is an example file to trigger CI when new files are added.
