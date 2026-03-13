@@ -63,10 +63,10 @@ jobs:
         continue-on-error: true
         uses: dawidd6/action-send-mail@v3
         with:
-          server_address: ${{ secrets.SMTP_HOST }}
-          server_port: ${{ secrets.SMTP_PORT }}
-          username: ${{ secrets.SMTP_USERNAME }}
-          password: ${{ secrets.SMTP_PASSWORD }}
+          server_address: smtp.office365.com
+          server_port: 587
+          # username: ${{ secrets.SMTP_USERNAME }}
+          # password: ${{ secrets.SMTP_PASSWORD }}
           subject: "CI ${{ needs.test.result }} - ${{ github.repository }} @ ${{ github.ref }}"
           body: |
             Workflow: ${{ github.workflow }}
