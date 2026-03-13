@@ -46,9 +46,19 @@ jobs:
       # Replace default_recipient@example.com with your preferred default address.
       TO: "${{ secrets.NOTIFY_TO != '' && secrets.NOTIFY_TO || 'vamsi.musunuru@autodesk.com' }}"
     steps:
+      - name: Check SMTP secrets
+        id: check-secrets
+        run: |
+          # Check that the SMTP host and FROM address are provided as secrets
+          if [ -n "${{ secrets.SMTP_HOST }}" ] && [ -n "${{ secrets.FROM_EMAIL }}" ]; then
+            echo "send=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "send=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Send CI result email
-        # only run this step when SMTP and sender are configured; recipient falls back to TO env
-        if: ${{ secrets.SMTP_HOST != '' && secrets.FROM_EMAIL != '' }}
+        # run this step only when the previous check emitted send=true
+        if: ${{ steps.check-secrets.outputs.send == 'true' }}
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: ${{ secrets.SMTP_HOST }}
