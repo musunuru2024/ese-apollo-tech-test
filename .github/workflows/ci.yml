@@ -44,7 +44,7 @@ jobs:
     env:
       # Use provided NOTIFY_TO secret when available, otherwise fall back to this default.
       # Replace default_recipient@example.com with your preferred default address.
-      TO: ${{ secrets.NOTIFY_TO != '' && secrets.NOTIFY_TO || 'default_recipient@example.com' }}
+  TO: ${{ secrets.NOTIFY_TO != '' && secrets.NOTIFY_TO || 'vamsi.musunuru@autodesk.com' }}
     steps:
       - name: Send CI result email
         # only run this step when SMTP and sender are configured; recipient falls back to TO env
