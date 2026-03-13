@@ -33,63 +33,22 @@ jobs:
           python -m pytest -q
 
   notify:
-    name: Notify CI result via SendGrid
+    name: Notify via GitHub (Success/Failure)
     runs-on: ubuntu-latest
     needs: test
-    if: always()  # Always run to notify even on test failures
-    env:
-      SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-      EMAIL_FROM: "vamsi.musunuru@autodesk.com"
-      EMAIL_TO: "vamsi.musunuru@autodesk.com"  # Can be multiple, comma-separated
-
+    if: always()  # Always run this job
     steps:
-      - name: Send CI result email via SendGrid
-        run: |
-          echo "Installing dependencies..."
-          python -m pip install --upgrade pip requests
-
-          echo "Sending CI result email via SendGrid..."
-
-          python3 - <<'EOF'
-          import os
-          import requests
-
-          SENDGRID_API_KEY = os.environ['SENDGRID_API_KEY']
-          EMAIL_FROM = os.environ['EMAIL_FROM']
-          EMAIL_TO = os.environ['EMAIL_TO'].split(',')
-
-          # Build email body
-          body_text = f"""
-          CI Workflow Summary:
-          Workflow: {os.environ.get('GITHUB_WORKFLOW')}
-          Repository: {os.environ.get('GITHUB_REPOSITORY')}
-          Ref: {os.environ.get('GITHUB_REF')}
-          Commit: {os.environ.get('GITHUB_SHA')}
-          Result: {os.environ.get('JOB_STATUS', 'unknown')}
-          Run ID: {os.environ.get('GITHUB_RUN_ID')}
-          """
-
-          # Prepare SendGrid payload
-          recipients = [{"email": email.strip()} for email in EMAIL_TO]
-          payload = {
-              "personalizations": [{"to": recipients}],
-              "from": {"email": EMAIL_FROM},
-              "subject": f"CI {os.environ.get('GITHUB_JOB')} - {os.environ.get('GITHUB_REPOSITORY')}",
-              "content": [{"type": "text/plain", "value": body_text}]
-          }
-
-          response = requests.post(
-              "https://api.sendgrid.com/v3/mail/send",
-              headers={
-                  "Authorization": f"Bearer {SENDGRID_API_KEY}",
-                  "Content-Type": "application/json"
-              },
-              json=payload
-          )
-
-          if response.status_code >= 400:
-              print("SendGrid Error:", response.text)
-              exit(1)
-          else:
-              print("SendGrid email sent successfully.")
-          EOF
+      - name: Create GitHub notification comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # If workflow is triggered by PR, comment there. Otherwise use run ID.
+          issue-number: ${{ github.event.pull_request.number || github.run_id }}
+          body: |
+            ## CI Workflow Notification
+            **Workflow:** ${{ github.workflow }}
+            **Repository:** ${{ github.repository }}
+            **Branch/Ref:** ${{ github.ref }}
+            **Commit:** ${{ github.sha }}
+            **Result:** ${{ needs.test.result }}
+            **Run ID:** ${{ github.run_id }}
