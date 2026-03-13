@@ -33,26 +33,26 @@ jobs:
         run: |
           python -m pytest -q
 
-    notify:
-      name: Notify (always)
-      runs-on: ubuntu-latest
-      needs: test
-      if: always()
-      steps:
-        - name: Send CI result email
-          uses: dawidd6/action-send-mail@v3
-          with:
-            server_address: ${{ secrets.SMTP_HOST }}
-            server_port: ${{ secrets.SMTP_PORT }}
-            username: ${{ secrets.SMTP_USERNAME }}
-            password: ${{ secrets.SMTP_PASSWORD }}
-            subject: "CI ${{ needs.test.result }} - ${{ github.repository }} @ ${{ github.ref }}"
-            body: |
-              Workflow: ${{ github.workflow }}
-              Repository: ${{ github.repository }}
-              Ref: ${{ github.ref }}
-              Commit: ${{ github.sha }}
-              Result: ${{ needs.test.result }}
-              Run: ${{ github.run_id }}
-            to: ${{ secrets.NOTIFY_TO }}
-            from: ${{ secrets.FROM_EMAIL }}
+  notify:
+    name: Notify (always)
+    runs-on: ubuntu-latest
+    needs: test
+    if: always()
+    steps:
+      - name: Send CI result email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_HOST }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "CI ${{ needs.test.result }} - ${{ github.repository }} @ ${{ github.ref }}"
+          body: |
+            Workflow: ${{ github.workflow }}
+            Repository: ${{ github.repository }}
+            Ref: ${{ github.ref }}
+            Commit: ${{ github.sha }}
+            Result: ${{ needs.test.result }}
+            Run: ${{ github.run_id }}
+          to: ${{ secrets.NOTIFY_TO }}
+          from: ${{ secrets.FROM_EMAIL }}
