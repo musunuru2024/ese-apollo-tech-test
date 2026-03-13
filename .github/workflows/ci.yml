@@ -34,18 +34,17 @@ jobs:
           python -m pytest -q
 
   notify:
-    name: Notify (when SMTP secrets present)
+    name: Notify (conditional send)
     runs-on: ubuntu-latest
     needs: test
-    # Job-level expressions cannot directly reference the `secrets` context in all runners,
-    # so expose the two required secrets to job env and guard on those env vars instead.
-    env:
-      SMTP_HOST: ${{ secrets.SMTP_HOST }}
-      FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
-    # Only run notify job if SMTP_HOST and FROM_EMAIL are non-empty
-    if: ${{ env.SMTP_HOST != '' && env.FROM_EMAIL != '' }}
+    # Always run the job (so it can be used to gate notifications), but only run the
+    # send step when the required secrets are present. Using a step-level `if` avoids
+    # job-level context restrictions.
+    if: always()
     steps:
       - name: Send CI result email
+        # only run this step when SMTP and recipient data are configured
+        if: ${{ secrets.SMTP_HOST != '' && secrets.FROM_EMAIL != '' && secrets.NOTIFY_TO != '' }}
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: ${{ secrets.SMTP_HOST }}
