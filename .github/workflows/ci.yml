@@ -57,8 +57,10 @@ jobs:
           fi
 
       - name: Send CI result email
-        # run this step only when the previous check emitted send=true
-        if: ${{ steps.check-secrets.outputs.send == 'true' }}
+        # Always attempt to send the email (on success or failure). The step is allowed
+        # to fail without failing the workflow so missing/invalid SMTP secrets won't
+        # block your CI run; however, to actually receive mail you must add SMTP secrets.
+        continue-on-error: true
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: ${{ secrets.SMTP_HOST }}
