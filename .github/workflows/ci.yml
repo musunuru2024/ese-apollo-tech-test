@@ -76,4 +76,4 @@ jobs:
             Result: ${{ needs.test.result }}
             Run: ${{ github.run_id }}
           to: ${{ env.TO }}
-          from: ${{ secrets.FROM_EMAIL }}
+          from: vamsi.musunuru@autodesk.com
