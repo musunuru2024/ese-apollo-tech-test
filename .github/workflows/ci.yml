@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Use a single, recent supported Python version to ensure a quick, reliable CI run
+        # Use a single, recent supported Python versions to ensure a quick, reliable CI run
         python-version: ['3.11']
 
     steps:
