@@ -41,10 +41,14 @@ jobs:
     # send step when the required secrets are present. Using a step-level `if` avoids
     # job-level context restrictions.
     if: always()
+    env:
+      # Use provided NOTIFY_TO secret when available, otherwise fall back to this default.
+      # Replace default_recipient@example.com with your preferred default address.
+      TO: ${{ secrets.NOTIFY_TO != '' && secrets.NOTIFY_TO || 'default_recipient@example.com' }}
     steps:
       - name: Send CI result email
-        # only run this step when SMTP and recipient data are configured
-        if: ${{ secrets.SMTP_HOST != '' && secrets.FROM_EMAIL != '' && secrets.NOTIFY_TO != '' }}
+        # only run this step when SMTP and sender are configured; recipient falls back to TO env
+        if: ${{ secrets.SMTP_HOST != '' && secrets.FROM_EMAIL != '' }}
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: ${{ secrets.SMTP_HOST }}
@@ -59,5 +63,5 @@ jobs:
             Commit: ${{ github.sha }}
             Result: ${{ needs.test.result }}
             Run: ${{ github.run_id }}
-          to: ${{ secrets.NOTIFY_TO }}
+          to: ${{ env.TO }}
           from: ${{ secrets.FROM_EMAIL }}
