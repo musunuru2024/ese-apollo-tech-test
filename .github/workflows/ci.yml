@@ -12,7 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Use a single, recent supported Python version to ensure a quick, reliable CI run
         python-version: ['3.11']
 
     steps:
@@ -34,46 +33,63 @@ jobs:
           python -m pytest -q
 
   notify:
-    name: Notify (conditional send)
+    name: Notify CI result via SendGrid
     runs-on: ubuntu-latest
     needs: test
-    # Always run the job (so it can be used to gate notifications), but only run the
-    # send step when the required secrets are present. Using a step-level `if` avoids
-    # job-level context restrictions.
-    if: always()
+    if: always()  # Always run to notify even on test failures
     env:
-      # Use provided NOTIFY_TO secret when available, otherwise fall back to this default.
-      # Replace default_recipient@example.com with your preferred default address.
-      TO: "${{ secrets.NOTIFY_TO != '' && secrets.NOTIFY_TO || 'vamsi.musunuru@autodesk.com' }}"
-    steps:
-      - name: Check SMTP secrets
-        id: check-secrets
-        run: |
-          # Check that the SMTP host and FROM address are provided as secrets
-          if [ -n "${{ secrets.SMTP_HOST }}" ] && [ -n "${{ secrets.FROM_EMAIL }}" ]; then
-            echo "send=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "send=false" >> "$GITHUB_OUTPUT"
-          fi
+      SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+      EMAIL_FROM: "vamsi.musunuru@autodesk.com"
+      EMAIL_TO: "vamsi.musunuru@autodesk.com"  # Can be multiple, comma-separated
 
-      - name: Send CI result email
-        # Always attempt to send the email (on success or failure). The step is allowed
-        # to fail without failing the workflow so missing/invalid SMTP secrets won't
-        # block your CI run; however, to actually receive mail you must add SMTP secrets.
-        continue-on-error: true
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.office365.com
-          server_port: 587
-          # username: ${{ secrets.SMTP_USERNAME }}
-          # password: ${{ secrets.SMTP_PASSWORD }}
-          subject: "CI ${{ needs.test.result }} - ${{ github.repository }} @ ${{ github.ref }}"
-          body: |
-            Workflow: ${{ github.workflow }}
-            Repository: ${{ github.repository }}
-            Ref: ${{ github.ref }}
-            Commit: ${{ github.sha }}
-            Result: ${{ needs.test.result }}
-            Run: ${{ github.run_id }}
-          to: ${{ env.TO }}
-          from: vamsi.musunuru@autodesk.com
+    steps:
+      - name: Send CI result email via SendGrid
+        run: |
+          echo "Installing dependencies..."
+          python -m pip install --upgrade pip requests
+
+          echo "Sending CI result email via SendGrid..."
+
+          python3 - <<'EOF'
+          import os
+          import requests
+
+          SENDGRID_API_KEY = os.environ['SENDGRID_API_KEY']
+          EMAIL_FROM = os.environ['EMAIL_FROM']
+          EMAIL_TO = os.environ['EMAIL_TO'].split(',')
+
+          # Build email body
+          body_text = f"""
+          CI Workflow Summary:
+          Workflow: {os.environ.get('GITHUB_WORKFLOW')}
+          Repository: {os.environ.get('GITHUB_REPOSITORY')}
+          Ref: {os.environ.get('GITHUB_REF')}
+          Commit: {os.environ.get('GITHUB_SHA')}
+          Result: {os.environ.get('JOB_STATUS', 'unknown')}
+          Run ID: {os.environ.get('GITHUB_RUN_ID')}
+          """
+
+          # Prepare SendGrid payload
+          recipients = [{"email": email.strip()} for email in EMAIL_TO]
+          payload = {
+              "personalizations": [{"to": recipients}],
+              "from": {"email": EMAIL_FROM},
+              "subject": f"CI {os.environ.get('GITHUB_JOB')} - {os.environ.get('GITHUB_REPOSITORY')}",
+              "content": [{"type": "text/plain", "value": body_text}]
+          }
+
+          response = requests.post(
+              "https://api.sendgrid.com/v3/mail/send",
+              headers={
+                  "Authorization": f"Bearer {SENDGRID_API_KEY}",
+                  "Content-Type": "application/json"
+              },
+              json=payload
+          )
+
+          if response.status_code >= 400:
+              print("SendGrid Error:", response.text)
+              exit(1)
+          else:
+              print("SendGrid email sent successfully.")
+          EOF
